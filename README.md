@@ -13,18 +13,33 @@ I want a small amount of primitives where it's easy to built out your own syntax
 
 My end goal is to have an executable that I can use a repl and execute .yoc files.
 
-## Specific goals
+I need to decide how to implement, using what language etc.
 
-1. Easily rename some things.
-  car -> first
-  cdr -> rest
-  define -> def
-  lambda -> func/fn or something like that
-
-2. easily add syntax
-  - [items] -> (list items)
-  - {} -> dictionary
-  - some kind of splat operator like ...
-  - make all definitions alike. So no special keyword for defining functions, rather just use `(def name (fn [x] (body)))` (same with macro)
-
-3. Consider infix?
+> ## List of built ins
+>
+> Special forms:
+> - quote
+> - func
+> - if
+> - def
+> - macro
+>
+> Functions:
+> - append (like cons)
+> - first
+> - rest
+> - same?
+>
+> Arithmetic
+> - +, - , *, /, ^
+>
+> IO:
+> - read
+> - print
+>
+> Type checking:
+> - list?
+> - number?
+> - string?
+> - nil?
+> - symbol?
