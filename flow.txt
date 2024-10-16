@@ -1,0 +1,38 @@
+Input: "(defn add (a b) (+ a b)) (add 1 2)"
+    |
+    v
+[tokenize()]
+    |
+    v
+Tokens: ["(", "defn", "add", "(", "a", "b", ")",
+    |    "(", "+", "a", "b", ")", ")", "(", "add", "1", "2", ")"]
+    |
+    v
+[parseExpr()]
+    |
+    v
+Expression: [List(Symbol("defn"), Symbol("add"), List(Symbol("a"), Symbol("b")),
+    |        List(Symbol("+"), Symbol("a"), Symbol("b"))),
+    |        List(Symbol("add"), Number(1), Number(2))]
+    |
+    v
+[Eval()]
+    |
+    +-> [evalDefn()] --> Defines 'add' function in environment
+    |
+    +-> [Eval(add 1 2)]
+        |
+        v
+       [Function call: add(1, 2)]
+           |
+           v
+          [evalAdd()] --> Number(3)
+    |
+    v
+Result: Number(3)
+    |
+    v
+[fmt.Sprintf()]
+    |
+    v
+Output: "3"
