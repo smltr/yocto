@@ -13,7 +13,7 @@ I want a small amount of primitives where it's easy to built out your own syntax
 
 My end goal is to have an executable that I can use a repl and execute .yoc files.
 
-I need to decide how to implement, using what language etc.
+Golang will be used for back end.
 
 > ## List of built ins
 >
@@ -43,3 +43,8 @@ I need to decide how to implement, using what language etc.
 > - string?
 > - nil?
 > - symbol?
+
+
+## First steps
+
+I want to implement a basic, idiomatic version of lisp first and then build the built in constructs out of that.
