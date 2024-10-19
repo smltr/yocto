@@ -1,4 +1,3 @@
-(defmacro (sum & args)
-    `(+ ,@args))
+(defmacro (sum a &args) `(+ ,a ,@args))
 
-(sum 1 1)
+(print (sum 1 2 3 4 5 ))

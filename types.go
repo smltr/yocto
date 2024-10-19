@@ -54,8 +54,6 @@ func (l List) Evaluate(env *Environment) (Expression, error) {
 		switch string(first) {
 		case "def":
 			return evalDef(l[1:], env)
-		case "defn":
-			return evalDefn(l[1:], env)
 		case "+":
 			return evalAdd(l[1:], env)
 		case "print":
@@ -78,7 +76,7 @@ func (l List) Evaluate(env *Environment) (Expression, error) {
 			return Boolean(true), nil
 		case "false":
 			return Boolean(false), nil
-		case "eval": // Add this line
+		case "eval":
 			return evalEval(l[1:], env)
 		}
 	}
@@ -89,17 +87,39 @@ func (l List) Evaluate(env *Environment) (Expression, error) {
 		return nil, err
 	}
 	if f, ok := fn.(Function); ok {
-		args := make([]Expression, len(l)-1)
-		for i, arg := range l[1:] {
+		args := make([]Expression, 0)
+		for _, arg := range l[1:] {
 			evaluated, err := arg.Evaluate(env)
 			if err != nil {
 				return nil, err
 			}
-			args[i] = evaluated
+			// If the argument is a spliced list, append its elements
+			if splice, ok := evaluated.(splicedList); ok {
+				args = append(args, splice.List...)
+			} else {
+				args = append(args, evaluated)
+			}
 		}
 		return f(args, env)
 	}
 	return nil, fmt.Errorf("not a function: %v", l[0])
+}
+
+// Define a new type to handle splicing
+type splicedList struct {
+	List List
+}
+
+// Ensure splicedList implements the Expression interface
+func (s splicedList) Evaluate(env *Environment) (Expression, error) {
+	// Spliced lists are handled during quasiquote expansion,
+	// so Evaluate can simply return the embedded list.
+	return s.List, nil
+}
+
+// Splice is a helper function to create a splicedList
+func Splice(list List) splicedList {
+	return splicedList{List: list}
 }
 
 // macros ---
@@ -120,13 +140,6 @@ func quasiquoteExpand(expr Expression, env *Environment, depth int) (Expression,
 		if len(e) > 0 {
 			if name, ok := e[0].(Name); ok {
 				switch string(name) {
-				case "unquote":
-					if depth == 0 {
-						if len(e) != 2 {
-							return nil, fmt.Errorf("unquote requires exactly one argument")
-						}
-						return e[1].Evaluate(env)
-					}
 				case "unquote-splicing":
 					if depth == 0 {
 						if len(e) != 2 {
@@ -136,31 +149,40 @@ func quasiquoteExpand(expr Expression, env *Environment, depth int) (Expression,
 						if err != nil {
 							return nil, err
 						}
-						if splicedList, ok := spliced.(List); ok {
-							return splicedList, nil
+						splicedList, ok := spliced.(List)
+						if !ok {
+							return nil, fmt.Errorf("unquote-splicing argument must evaluate to a list")
 						}
-						return nil, fmt.Errorf("unquote-splicing argument must evaluate to a list")
+						return Splice(splicedList), nil
 					}
 				}
 			}
 		}
-		result := make(List, 0, len(e))
+
+		var result List
 		for _, subExpr := range e {
 			expanded, err := quasiquoteExpand(subExpr, env, depth)
 			if err != nil {
 				return nil, err
 			}
-			result = append(result, expanded)
+
+			// Check if the expanded expression is a splice
+			if splice, ok := expanded.(splicedList); ok {
+				result = append(result, splice.List...)
+			} else {
+				result = append(result, expanded)
+			}
 		}
 		return result, nil
+
 	case Name:
 		if depth == 0 {
-			value, ok := env.Get(e)
-			if ok {
+			if value, ok := env.Get(e); ok {
 				return value, nil
 			}
 		}
 		return e, nil
+
 	default:
 		return expr, nil
 	}

@@ -18,51 +18,6 @@ func evalDef(args []Expression, env *Environment) (Expression, error) {
 	return value, nil
 }
 
-func evalDefn(args []Expression, env *Environment) (Expression, error) {
-	if len(args) != 2 {
-		return nil, fmt.Errorf("defn requires 2 arguments")
-	}
-
-	signature, ok := args[0].(List)
-	if !ok || len(signature) < 1 {
-		return nil, fmt.Errorf("first argument to defn must be a list containing at least the function name")
-	}
-
-	name, ok := signature[0].(Name)
-	if !ok {
-		return nil, fmt.Errorf("function name must be a symbol")
-	}
-
-	params := signature[1:]
-	body := args[1:]
-
-	fn := Function(func(args []Expression, env *Environment) (Expression, error) {
-		if len(args) != len(params) {
-			return nil, fmt.Errorf("wrong number of arguments: expected %d, got %d", len(params), len(args))
-		}
-		newEnv := NewEnvironment(env)
-		for i, param := range params {
-			symbol, ok := param.(Name)
-			if !ok {
-				return nil, fmt.Errorf("parameter must be a symbol")
-			}
-			newEnv.Set(symbol, args[i])
-		}
-		var result Expression
-		var err error
-		for _, expr := range body {
-			result, err = expr.Evaluate(newEnv)
-			if err != nil {
-				return nil, err
-			}
-		}
-		return result, nil
-	})
-
-	env.Set(name, fn)
-	return fn, nil
-}
-
 func evalAdd(args []Expression, env *Environment) (Expression, error) {
 	var result float64
 	for _, arg := range args {
@@ -178,12 +133,12 @@ func evalDefMacro(args []Expression, env *Environment) (Expression, error) {
 	params := make(List, 0)
 	var restParam Name
 	for i, param := range signature[1:] {
-		if paramName, ok := param.(Name); ok && string(paramName) == "..." {
+		if paramName, ok := param.(Name); ok && string(paramName) == "&" {
 			if i+1 < len(signature[1:]) {
 				restParam = signature[i+2].(Name)
 				break
 			} else {
-				return nil, fmt.Errorf("... must be followed by a parameter name")
+				return nil, fmt.Errorf("& must be followed by a parameter name")
 			}
 		}
 		params = append(params, param)

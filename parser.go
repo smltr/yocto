@@ -7,7 +7,7 @@ import (
 )
 
 func tokenize(input string) []string {
-	specialTokens := []string{"(", ")", "'", "`", ",", "...", "\""}
+	specialTokens := []string{"(", ")", "'", "`", ",", "&", "\"", "@"}
 	for _, token := range specialTokens {
 		input = strings.ReplaceAll(input, token, " "+token+" ")
 	}
@@ -65,8 +65,8 @@ func parseExpr(tokens []string) (Expression, []string, error) {
 			return nil, tokens, err
 		}
 		return List{Name("unquote"), expr}, remaining, nil
-	case "...":
-		return Name("..."), tokens, nil
+	case "&":
+		return Name("&"), tokens, nil
 	default:
 		if num, err := strconv.ParseFloat(token, 64); err == nil {
 			return Number(num), tokens, nil

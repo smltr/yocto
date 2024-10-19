@@ -11,11 +11,6 @@ func TestYoctoLisp(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "Define and call function",
-			input:    "(defn (add a b) (+ a b)) (add 1 2)",
-			expected: "3",
-		},
-		{
 			name:     "Define variable",
 			input:    "(def one 1) one",
 			expected: "1",
