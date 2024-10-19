@@ -1,4 +1,4 @@
-(defmacro (add a b)
-    `(+ ,a ,b))
+(defmacro (sum & args)
+    `(+ ,@args))
 
-(add 1 1)
+(sum 1 1)
