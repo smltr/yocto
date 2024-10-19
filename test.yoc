@@ -1,6 +1,11 @@
-(defn (fibonacci n)
+(defn (fib-tail n acc1 acc2)
   (if (<= n 1)
-      n
-      (+ (fibonacci (- n 1)) (fibonacci (- n 2)))))
+      acc2
+          (fib-tail (- n 1) acc2 (+ acc1 acc2)))
 
-(fibonacci 35)
+  )
+
+(defn (fibonacci n)
+  (fib-tail n 0 1))
+
+(print (fibonacci 50))
