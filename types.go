@@ -6,15 +6,10 @@ type Name string
 type Number float64
 type List []Expression
 type String string
-type Function func(args []Expression, env *Environment) (Expression, error)
 type Boolean bool
 
 func (b Boolean) Evaluate(env *Environment) (Expression, error) {
 	return b, nil
-}
-
-func (f Function) Evaluate(env *Environment) (Expression, error) {
-	return f, nil
 }
 
 func (n Name) Evaluate(env *Environment) (Expression, error) {
@@ -54,6 +49,12 @@ func (l List) Evaluate(env *Environment) (Expression, error) {
 		switch string(first) {
 		case "def":
 			return evalDef(l[1:], env)
+		case "defn":
+			return evalDefn(l[1:], env)
+		case "func":
+			return evalLambda(l[1:], env)
+		case "if":
+			return evalIf(l[1:], env)
 		case "+":
 			return evalAdd(l[1:], env)
 		case "print":
@@ -72,12 +73,30 @@ func (l List) Evaluate(env *Environment) (Expression, error) {
 			return evalAnd(l[1:], env)
 		case "or":
 			return evalOr(l[1:], env)
+		case "not":
+			return evalNot(l[1:], env)
 		case "true":
 			return Boolean(true), nil
 		case "false":
 			return Boolean(false), nil
 		case "eval":
 			return evalEval(l[1:], env)
+		case "-":
+			return evalSubtract(l[1:], env)
+		case "*":
+			return evalMultiply(l[1:], env)
+		case "/":
+			return evalDivide(l[1:], env)
+		case "=":
+			return evalEqual(l[1:], env)
+		case "<":
+			return evalLessThan(l[1:], env)
+		case ">":
+			return evalGreaterThan(l[1:], env)
+		case "<=":
+			return evalLessThanOrEqual(l[1:], env)
+		case ">=":
+			return evalGreaterThanOrEqual(l[1:], env)
 		}
 	}
 
@@ -86,21 +105,30 @@ func (l List) Evaluate(env *Environment) (Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	if f, ok := fn.(Function); ok {
-		args := make([]Expression, 0)
-		for _, arg := range l[1:] {
-			evaluated, err := arg.Evaluate(env)
+	if f, ok := fn.(*Function); ok {
+		// Evaluate arguments
+		args := make([]Expression, len(l)-1)
+		for i, arg := range l[1:] {
+			args[i], err = arg.Evaluate(env)
 			if err != nil {
 				return nil, err
 			}
-			// If the argument is a spliced list, append its elements
-			if splice, ok := evaluated.(splicedList); ok {
-				args = append(args, splice.List...)
-			} else {
-				args = append(args, evaluated)
+		}
+
+		newEnv := NewEnvironment(f.env)
+		for i, param := range f.params {
+			if i < len(args) {
+				newEnv.Set(param.(Name), args[i])
 			}
 		}
-		return f(args, env)
+		var result Expression
+		for _, expr := range f.body {
+			result, err = expr.Evaluate(newEnv)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return result, nil
 	}
 	return nil, fmt.Errorf("not a function: %v", l[0])
 }
@@ -240,4 +268,14 @@ func MacroExpand(expr Expression, env *Environment) (Expression, bool, error) {
 	}
 
 	return expr, didExpand, nil
+}
+
+type Function struct {
+	params List
+	body   List
+	env    *Environment
+}
+
+func (f *Function) Evaluate(env *Environment) (Expression, error) {
+	return f, nil
 }
